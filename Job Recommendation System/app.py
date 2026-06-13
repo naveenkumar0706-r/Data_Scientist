@@ -1,93 +1,107 @@
 import streamlit as st
-import numpy as np
-import pickle
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing.sequence import pad_sequences
 
-# Page Config
+# Page Configuration
 st.set_page_config(
     page_title="Job Recommendation System",
     page_icon="💼",
-    layout="centered"
+    layout="wide"
 )
 
-MAX_LEN = 200
+# Background Image
+page_bg = """
+<style>
 
-# Cache model loading
-@st.cache_resource
-def load_resources():
-    model = load_model("job_model.h5")
+.stApp {
+    background-image: url("https://images.unsplash.com/photo-1516321318423-f06f85e504b3");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
 
-    with open("tokenizer.pkl", "rb") as f:
-        tokenizer = pickle.load(f)
+/* Center Container */
+.main-box {
+    background: rgba(0, 0, 0, 0.65);
+    padding: 40px;
+    border-radius: 15px;
+    width: 60%;
+    margin: auto;
+    margin-top: 80px;
+    text-align: center;
+}
 
-    with open("label_encoder.pkl", "rb") as f:
-        label_encoder = pickle.load(f)
+/* Text Color */
+h1, h2, h3, p, label {
+    color: white !important;
+}
 
-    return model, tokenizer, label_encoder
+/* Text Area */
+textarea {
+    background-color: rgba(255,255,255,0.9) !important;
+    color: black !important;
+    font-size: 16px !important;
+}
 
-try:
-    model, tokenizer, label_encoder = load_resources()
-except Exception as e:
-    st.error(f"Model loading failed: {e}")
-    st.stop()
+/* Button */
+.stButton > button {
+    width: 100%;
+    background-color: #00b4d8;
+    color: white;
+    font-size: 18px;
+    border-radius: 10px;
+    padding: 10px;
+}
 
-# Title
-st.title("💼 Job Recommendation System")
+</style>
+"""
 
-st.write(
-    "Enter your skills or resume summary to get a recommended job role."
+st.markdown(page_bg, unsafe_allow_html=True)
+
+# Centered Heading
+st.markdown(
+    """
+    <div class="main-box">
+        <h1>💼 Job Recommendation System</h1>
+        <p>Enter your skills or resume summary to get a recommended job role.</p>
+    </div>
+    """,
+    unsafe_allow_html=True
 )
 
-# Input
-user_input = st.text_area(
-    "Enter Skills / Resume Summary",
-    height=200,
-    placeholder="Python, Machine Learning, SQL, TensorFlow..."
-)
+# Center Column Layout
+col1, col2, col3 = st.columns([1, 2, 1])
 
-# Prediction
-if st.button("🚀 Recommend Job"):
+with col2:
 
-    if not user_input.strip():
-        st.warning("Please enter skills.")
-    else:
-        try:
-            seq = tokenizer.texts_to_sequences([user_input])
+    skills = st.text_area(
+        "Enter Skills / Resume Summary",
+        height=180
+    )
 
-            padded = pad_sequences(
-                seq,
-                maxlen=MAX_LEN,
-                padding="post"
-            )
+    if st.button("Recommend Job"):
 
-            pred = model.predict(padded, verbose=0)
+        if skills.strip() == "":
+            st.warning("Please enter your skills.")
+        else:
 
-            best_index = np.argmax(pred)
-            confidence = pred[0][best_index] * 100
+            skills = skills.lower()
 
-            job_role = label_encoder.inverse_transform(
-                [best_index]
-            )[0]
+            if "python" in skills or "machine learning" in skills:
+                job = "Data Scientist"
 
-            st.success(
-                f"🎯 Recommended Job: {job_role}"
-            )
+            elif "java" in skills:
+                job = "Java Developer"
 
-            st.info(
-                f"📊 Confidence Score: {confidence:.2f}%"
-            )
+            elif "sql" in skills or "power bi" in skills:
+                job = "Data Analyst"
 
-            st.subheader("🏆 Top 5 Recommendations")
+            elif "html" in skills or "css" in skills:
+                job = "Web Developer"
 
-            top5 = np.argsort(pred[0])[-5:][::-1]
+            elif "aws" in skills or "cloud" in skills:
+                job = "Cloud Engineer"
 
-            for i in top5:
-                role = label_encoder.inverse_transform([i])[0]
-                score = pred[0][i] * 100
-                st.write(
-                    f"✅ {role} — {score:.2f}%"
-                )
+            else:
+                job = "Software Engineer"
 
-        except Exception as e:
-            st.error(f"Prediction Error: {e}")
+            st.success(f"🎯 Recommended Job: {job}")
